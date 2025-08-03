@@ -1,0 +1,13 @@
+{
+  "name": "claude-quality-starter",
+  "version": "1.0.0",
+  "description": "Minimal static site generated with Claude Code",
+  "scripts": {
+    "dev": "vercel dev",          // פיתוח מקומי (Vercel CLI)
+    "build": "echo \"Static site - no build step\"",
+    "preview": "npm run dev",
+    "deploy": "vercel --prod"
+  },
+  "author": "Asaf Peer",
+  "license": "MIT"
+}
