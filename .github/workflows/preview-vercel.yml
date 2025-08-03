@@ -9,19 +9,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with: { fetch-depth: 0 }
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-    - uses: actions/setup-node@v4
-      with: { node-version: 18 }
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
 
-    - run: npm i -g vercel@latest
-      name: Install Vercel CLI
+    - name: Install Vercel CLI
+      run: npm i -g vercel@latest
 
-    - run: |
+    - name: Install deps & build
+      run: |
         npm ci
         npm run build
-      name: Install deps & build
 
     - name: Deploy Preview
       env:
