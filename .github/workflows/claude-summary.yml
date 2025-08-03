@@ -3,34 +3,45 @@ name: Claude Summary
 on:
   push:
     branches: [ master ]
-    paths-ignore: [ 'SUMMARY.md' ]
+    paths-ignore:
+      - 'SUMMARY.md'
 
 jobs:
   summarize:
     runs-on: ubuntu-latest
+
     steps:
+    # 1) checkout (שני קומיטים לדיפ)
     - uses: actions/checkout@v4
-      with: { fetch-depth: 2 }
+      with:
+        fetch-depth: 2
 
+    # 2) Node
     - uses: actions/setup-node@v4
-      with: { node-version: 20 }
+      with:
+        node-version: 20
 
+    # 3) Install Claude CLI
     - run: npm install -g @anthropic-ai/claude-code
 
+    # 4) Load API key
     - name: Load CLAUDE_API_KEY
-      run: echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" >> \$GITHUB_ENV
+      run: echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" >> $GITHUB_ENV
 
+    # 5) Create SUMMARY.md
     - name: Create summary
       run: |
         git log -1 --pretty=format:"%h - %s" > commit.txt
-        if [ "\$(git rev-list --count HEAD)" -gt 1 ]; then
+        if [ "$(git rev-list --count HEAD)" -gt 1 ]; then
           git diff HEAD~1..HEAD >> commit.txt
         fi
-        PROMPT="סכם בעברית בבולטים קצרים:\n\n\$(cat commit.txt)"
-        echo -e "\$PROMPT" | claude chat > SUMMARY.md
+        PROMPT="סכם בעברית בבולטים קצרים:\n\n$(cat commit.txt)"
+        echo -e "$PROMPT" | claude chat > SUMMARY.md
 
+    # 6) Commit & push
     - name: Commit summary
-      env: { GITHUB_TOKEN: \${{ github.token }} }
+      env:
+        GITHUB_TOKEN: ${{ github.token }}   # ← בלי {} inline
       run: |
         git config --global user.name  "claude-bot"
         git config --global user.email "bot@users.noreply.github.com"
