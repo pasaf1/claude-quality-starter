@@ -2,54 +2,54 @@ name: Claude Summary
 
 on:
   push:
-    branches: [ master ]          # שנה ל-main אם זה הענף העיקרי
+    branches: [ master ]        # שנה ל-main אם צריך
     paths-ignore:
-      - 'SUMMARY.md'              # לא להפעיל על קובץ הסיכום עצמו
+      - 'SUMMARY.md'
 
 jobs:
   summarize:
     runs-on: ubuntu-latest
 
     steps:
-    # 1) Checkout עם שני קומיטים אחורה
+    # 1) Checkout (שני קומיטים לדיפ)
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 2            # נדרשים שני קומיטים לדיפ
+        fetch-depth: 2
 
-    # 2) התקנת Node
+    # 2) Node
     - uses: actions/setup-node@v4
       with:
         node-version: 20
 
-    # 3) התקנת Claude CLI
+    # 3) Install Claude CLI
     - run: npm install -g @anthropic-ai/claude-code
 
-    # 4) טעינת מפתח Claude כמשתנה-סביבה
+    # 4) Load API key
     - name: Load CLAUDE_API_KEY
       run: echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" >> $GITHUB_ENV
 
-    # 5) יצירת commit.txt וסיכום
+    # 5) Create SUMMARY.md
     - name: Create summary
       run: |
+        # לוג הכותרת
         git log -1 --pretty=format:"%h - %s" > commit.txt
+        # דיפ רק אם יש שני קומיטים
         if [ "$(git rev-list --count HEAD)" -gt 1 ]; then
           git diff HEAD~1..HEAD >> commit.txt
         fi
 
-        claude code . \
-          --command "סכם בעברית (bullet-list קצר) את קובץ commit.txt." \
-          --input commit.txt > SUMMARY.md
+        # שלח את הקובץ ל־Claude והדפס תשובה
+        cat commit.txt | \
+          claude -p "סכם בעברית בפורמט bullet-list קצר את השינויים." \
+          > SUMMARY.md
 
-    # 6) קומיט ופוש של SUMMARY.md
+    # 6) Commit & push
     - name: Commit summary
       env:
-        # אם לא הגדרת GH_TOKEN – github.token המובנה יספיק
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+        GITHUB_TOKEN: ${{ github.token }}   # הטוקן המובנה מספיק
       run: |
         git config --global user.name  "claude-bot"
-        # אפשר להחליף לכתובת הנוריפליי של GitHub שלך:
-        # git config --global user.email "123456+USERNAME@users.noreply.github.com"
-        git config --global user.email "claude@example.com"
+        git config --global user.email "123456+USERNAME@users.noreply.github.com"
         git add SUMMARY.md
         git commit -m "docs: auto summary by Claude 🤖" || echo "No changes"
         git push
