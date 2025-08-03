@@ -1,8 +1,0 @@
-node_modules/
-dist/
-.env
-__pycache__/
-*.log
-.vscode/        # הגדרות מקומיות של VS Code
-.cache/
-*.tmp

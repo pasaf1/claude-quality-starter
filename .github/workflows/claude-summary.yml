@@ -1,3 +1,0 @@
-git add .github/workflows/claude-summary.yml
-git commit -m "fix(ci): switch to Claude REST API via curl"
-git push
