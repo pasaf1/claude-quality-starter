@@ -1,14 +1,75 @@
-56ca2c1 - update .gitignore – ignore .env etc.diff --git a/.gitignore b/.gitignore
-index 193991e..7677657 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -2,4 +2,7 @@ node_modules/
- dist/
- .env
- __pycache__/
--*.log
+d62704e - fix(ci): switch to Claude REST API via curldiff --git a/.github/workflows/claude-summary.yml b/.github/workflows/claude-summary.yml
+index c31cc8a..e972787 100644
+--- a/.github/workflows/claude-summary.yml
++++ b/.github/workflows/claude-summary.yml
+@@ -11,40 +11,52 @@ jobs:
+     runs-on: ubuntu-latest
+ 
+     steps:
+-    # 1) checkout (שני קומיטים לדיפ)
++    # 1) Checkout (שני קומיטים לדיפ)
+     - uses: actions/checkout@v4
+-      with:
+-        fetch-depth: 2
++      with: { fetch-depth: 2 }
+ 
+-    # 2) Node
+-    - uses: actions/setup-node@v4
+-      with:
+-        node-version: 20
++    # 2) מתקינים jq (פירוק JSON) ו-curl כבר קיים
++    - run: sudo apt-get update && sudo apt-get install -y jq
+ 
+-    # 3) Install Claude CLI
+-    - run: npm install -g @anthropic-ai/claude-code
+-
+-    # 4) Load API key
++    # 3) Load API key כסוד
+     - name: Load CLAUDE_API_KEY
+       run: echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" >> $GITHUB_ENV
+ 
+-    # 5) Create SUMMARY.md
++    # 4) יוצרים commit.txt ומבקשים מ-Claude סיכום
+     - name: Create summary
+       run: |
++        # כותרת הקומיט האחרון
+         git log -1 --pretty=format:"%h - %s" > commit.txt
++        # דיפ אם יש יותר מקומיט אחד
+         if [ "$(git rev-list --count HEAD)" -gt 1 ]; then
+           git diff HEAD~1..HEAD >> commit.txt
+         fi
+-        PROMPT="סכם בעברית בבולטים קצרים:\n\n$(cat commit.txt)"
+-        echo -e "$PROMPT" | claude chat > SUMMARY.md
+ 
+-    # 6) Commit & push
++        # בונים את הפרומפט
++        PROMPT="סכם בעברית בבולטים קצרים את השינויים הבאים:\n\n$(cat commit.txt)"
++
++        # בקשת API
++        curl https://api.anthropic.com/v1/messages \
++          -H "x-api-key: $CLAUDE_API_KEY" \
++          -H "anthropic-version: 2023-06-01" \
++          -H "content-type: application/json" \
++          -d @- <<CURL_EOF | jq -r '.content[0].text' > SUMMARY.md
++{
++  "model": "claude-3-sonnet-20240229",
++  "max_tokens": 256,
++  "messages": [
++    { "role": "user", "content": "$PROMPT" }
++  ]
++}
++CURL_EOF
++
++    # 5) Commit & push
+     - name: Commit summary
+       env:
+-        GITHUB_TOKEN: ${{ github.token }}   # ← בלי {} inline
++        GITHUB_TOKEN: ${{ github.token }}
+       run: |
+         git config --global user.name  "claude-bot"
+         git config --global user.email "bot@users.noreply.github.com"
+         git add SUMMARY.md
+         git commit -m "docs: auto summary by Claude 🤖" || echo "No changes"
+-        git push
++        git push
 \ No newline at end of file
-+*.log
-+.vscode/        # הגדרות מקומיות של VS Code
-+.cache/
-+*.tmp
