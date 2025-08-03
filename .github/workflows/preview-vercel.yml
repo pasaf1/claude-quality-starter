@@ -1,40 +1,14 @@
-name: Vercel Preview (PR)
-
-on:
-  pull_request:            # רץ על כל Pull Request
-    branches: [ "**" ]
-
-jobs:
-  preview:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0     # נחוץ ל-Vercel כדי לקבל SHA מלא
-
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 18
-
-    - name: Install Vercel CLI
-      run: npm i -g vercel@latest
-
-    - name: Install deps & build
-      run: |
-        npm ci
-        npm run build      # next build
-
     - name: Deploy Preview
       env:
+        # --------------------
+        #  כל הערכים מגיעים מ-Secrets
+        # --------------------
         VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
         VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       run: |
+        #  Vercel CLI קורא את ORG_ID ו-PROJECT_ID אוטומטית מה-env
         vercel deploy \
           --prod=false \
           --yes \
-          --token "$VERCEL_TOKEN" \
-          --org-id "$VERCEL_ORG_ID" \
-          --project-id "$VERCEL_PROJECT_ID"
-
+          --token "$VERCEL_TOKEN"
