@@ -2,51 +2,53 @@ name: Claude Summary
 
 on:
   push:
-    branches: [ master ]          # שנה ל-main אם צריך
+    branches: [ master ]          # שנה ל-main אם זה הענף העיקרי
     paths-ignore:
-      - 'SUMMARY.md'
+      - 'SUMMARY.md'              # לא להפעיל על קובץ הסיכום עצמו
 
 jobs:
   summarize:
     runs-on: ubuntu-latest
 
     steps:
-    # 1) Checkout עם היסטוריה של 2 קומיטים
+    # 1) Checkout עם שני קומיטים אחורה
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 2            # ⬅️ חשוב
+        fetch-depth: 2            # נדרשים שני קומיטים לדיפ
 
-    # 2) Node
+    # 2) התקנת Node
     - uses: actions/setup-node@v4
       with:
         node-version: 20
 
-    # 3) Install Claude CLI
+    # 3) התקנת Claude CLI
     - run: npm install -g @anthropic-ai/claude-code
 
-    # 4) Load API key
+    # 4) טעינת מפתח Claude כמשתנה-סביבה
     - name: Load CLAUDE_API_KEY
       run: echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" >> $GITHUB_ENV
 
-    # 5) Generate SUMMARY.md
+    # 5) יצירת commit.txt וסיכום
     - name: Create summary
       run: |
         git log -1 --pretty=format:"%h - %s" > commit.txt
-        # ה-diff רק אם יש יותר מקומיט אחד
         if [ "$(git rev-list --count HEAD)" -gt 1 ]; then
           git diff HEAD~1..HEAD >> commit.txt
         fi
 
-        claude code --no-permissions . \
+        claude code . \
           --command "סכם בעברית (bullet-list קצר) את קובץ commit.txt." \
           --input commit.txt > SUMMARY.md
 
-    # 6) Commit & push
+    # 6) קומיט ופוש של SUMMARY.md
     - name: Commit summary
       env:
+        # אם לא הגדרת GH_TOKEN – github.token המובנה יספיק
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
       run: |
         git config --global user.name  "claude-bot"
+        # אפשר להחליף לכתובת הנוריפליי של GitHub שלך:
+        # git config --global user.email "123456+USERNAME@users.noreply.github.com"
         git config --global user.email "claude@example.com"
         git add SUMMARY.md
         git commit -m "docs: auto summary by Claude 🤖" || echo "No changes"

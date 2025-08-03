@@ -1,0 +1,14 @@
+56ca2c1 - update .gitignore – ignore .env etc.diff --git a/.gitignore b/.gitignore
+index 193991e..7677657 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -2,4 +2,7 @@ node_modules/
+ dist/
+ .env
+ __pycache__/
+-*.log
+\ No newline at end of file
++*.log
++.vscode/        # הגדרות מקומיות של VS Code
++.cache/
++*.tmp
